@@ -1,0 +1,43 @@
+name: release
+
+# One workflow: every push and pull request runs the full test job; a pushed tag vX.Y.Z also
+# publishes to RubyGems, but only after the test job has passed.
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+      - run: bundle exec rake test
+      - run: gem build sursolver.gemspec
+
+  publish:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: rubygems
+    permissions:
+      contents: read
+      id-token: write # RubyGems trusted publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+      - name: Tag matches SurSolver::VERSION
+        run: test "v$(ruby -Ilib -e 'require "sursolver/version"; print SurSolver::VERSION')" = "${GITHUB_REF_NAME}"
+      - uses: rubygems/configure-rubygems-credentials@v1
+      - run: gem build sursolver.gemspec && gem push "sursolver-${GITHUB_REF_NAME#v}.gem"

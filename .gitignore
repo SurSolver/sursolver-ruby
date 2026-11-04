@@ -1,0 +1,19 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.idea/
+.vscode/
+.vs/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Ruby
+*.gem
+.bundle/
+vendor/bundle/
+Gemfile.lock
+coverage/
